@@ -1,0 +1,86 @@
+version: '3.8'
+
+services:
+  # 1. PostgreSQL - Ana Veritabanı
+  postgres:
+    image: postgres:15-alpine
+    container_name: figuverse_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: figuverse
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - figuverse_network
+
+  # 2. Redis - Sepet ve Önbellek (In-Memory Database)
+  redis:
+    image: redis:7-alpine
+    container_name: figuverse_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      - figuverse_network
+
+  # 3. Backend - Node.js Express API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: figuverse_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - PORT=5000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=figuverse
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=super_secret_jwt_key_change_in_production
+      - JWT_REFRESH_SECRET=super_secret_refresh_key_change_in_production
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - figuverse_network
+    # Geliştirme ortamı için volume bağlama (Hot-reload için faydalı)
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # 4. Frontend - React.js + Vite
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: figuverse_frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:5000/api
+    depends_on:
+      - backend
+    networks:
+      - figuverse_network
+    # Geliştirme ortamı için volume bağlama (Hot-reload için faydalı)
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+networks:
+  figuverse_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
