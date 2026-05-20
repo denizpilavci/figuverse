@@ -10,13 +10,17 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   
   const searchQuery = searchParams.get('search') || '';
+  const universeQuery = searchParams.get('universe') || '';
   const [localSearch, setLocalSearch] = useState(searchQuery);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const url = searchQuery ? `/products?search=${searchQuery}` : '/products';
+        let url = '/products';
+        if (searchQuery) url += `?search=${searchQuery}`;
+        if (universeQuery) url += `?universe=${universeQuery}`;
+        
         const res = await api.get(url);
         setProducts(res.data.data);
       } catch (error) {
@@ -26,7 +30,7 @@ export default function Products() {
       }
     };
     fetchProducts();
-  }, [searchQuery]);
+  }, [searchQuery, universeQuery]);
 
   const handleSearchSubmit = (e) => {
     e.preventDefault();
@@ -42,7 +46,11 @@ export default function Products() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
         <div>
           <h1 className="text-4xl font-black text-white mb-2">
-            {searchQuery ? `"${searchQuery}" Sonuçları` : 'Tüm Koleksiyon'}
+            {universeQuery 
+              ? `${universeQuery} Evreni` 
+              : searchQuery 
+                ? `"${searchQuery}" Sonuçları` 
+                : 'Tüm Koleksiyon'}
           </h1>
           <div className="h-1 w-24 bg-accent rounded-full"></div>
         </div>

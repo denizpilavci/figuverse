@@ -23,14 +23,14 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="glass sticky top-0 z-50 px-6 py-4">
+    <nav className="sticky top-0 z-50 px-6 py-4 bg-gray-950/80 backdrop-blur-xl border-b border-white/5 shadow-2xl">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2 group">
-          <div className="bg-gradient-to-tr from-primary to-accent p-2 rounded-xl group-hover:rotate-12 transition-transform">
+          <div className="bg-gradient-to-tr from-primary to-accent p-2 rounded-xl group-hover:rotate-12 transition-transform shadow-[0_0_15px_rgba(109,40,217,0.5)]">
             <Package size={24} className="text-white" />
           </div>
-          <span className="text-2xl font-black tracking-tight text-gradient">
-            FiguVerse
+          <span className="text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-300">
+            Figu<span className="text-primary">Verse</span>
           </span>
         </Link>
         
