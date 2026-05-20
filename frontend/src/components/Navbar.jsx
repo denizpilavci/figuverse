@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ShoppingCart, User, Search, Package, LogOut } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
@@ -7,6 +7,20 @@ export default function Navbar() {
   const { items } = useCartStore();
   const { user, token, logout } = useAuthStore();
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
+
+  const handleSearch = (e) => {
+    if (e.key === 'Enter') {
+      const val = e.target.value;
+      if (val.trim()) {
+        navigate(`/products?search=${val}`);
+      } else {
+        navigate(`/products`);
+      }
+    }
+  };
 
   return (
     <nav className="glass sticky top-0 z-50 px-6 py-4">
@@ -26,8 +40,10 @@ export default function Navbar() {
           </div>
           <input 
             type="text" 
-            placeholder="Evrenlerde figür ara (Örn: Marvel, Star Wars)..." 
-            className="w-full bg-white/10 border border-white/20 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-gray-500"
+            defaultValue={searchQuery}
+            onKeyDown={handleSearch}
+            placeholder="Evrenlerde figür ara (Örn: Marvel) ve Enter'a bas..." 
+            className="w-full bg-white/10 border border-white/20 rounded-full py-2 pl-10 pr-4 text-sm focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all placeholder:text-gray-500 text-white"
           />
         </div>
 

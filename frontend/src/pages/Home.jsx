@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { Loader2 } from 'lucide-react';
 import api from '../services/api';
@@ -6,11 +7,15 @@ import api from '../services/api';
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get('search') || '';
 
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true);
       try {
-        const res = await api.get('/products');
+        const url = searchQuery ? `/products?search=${searchQuery}` : '/products';
+        const res = await api.get(url);
         setProducts(res.data.data);
       } catch (error) {
         console.error("Ürünler çekilemedi:", error);
@@ -19,7 +24,11 @@ export default function Home() {
       }
     };
     fetchProducts();
-  }, []);
+  }, [searchQuery]);
+
+  const scrollToProducts = () => {
+    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-16 pb-16">
@@ -34,20 +43,28 @@ export default function Home() {
           <p className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl z-10">
             En sevdiğiniz evrenlerden özenle seçilmiş, premium kalitede kurgusal karakter figürleri FiguVerse'te.
           </p>
-          <button className="z-10 bg-gradient-to-r from-primary to-purple-500 hover:from-purple-500 hover:to-primary text-white font-bold py-4 px-10 rounded-full shadow-[0_0_30px_rgba(109,40,217,0.4)] hover:shadow-[0_0_40px_rgba(109,40,217,0.7)] transition-all duration-300 transform hover:-translate-y-1">
+          <button 
+            onClick={scrollToProducts}
+            className="z-10 bg-gradient-to-r from-primary to-purple-500 hover:from-purple-500 hover:to-primary text-white font-bold py-4 px-10 rounded-full shadow-[0_0_30px_rgba(109,40,217,0.4)] hover:shadow-[0_0_40px_rgba(109,40,217,0.7)] transition-all duration-300 transform hover:-translate-y-1"
+          >
             Koleksiyonu Keşfet
           </button>
         </div>
       </section>
 
       {/* Featured Products */}
-      <section>
-        <div className="flex justify-between items-end mb-8">
+      <section id="products">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-white mb-2">Öne Çıkan Figürler</h2>
+            <h2 className="text-3xl font-bold text-white mb-2">
+              {searchQuery ? `"${searchQuery}" için Sonuçlar` : 'Öne Çıkan Figürler'}
+            </h2>
             <div className="h-1 w-20 bg-accent rounded-full"></div>
           </div>
-          <button className="text-primary hover:text-purple-400 font-medium transition-colors">
+          <button 
+            onClick={scrollToProducts}
+            className="text-primary hover:text-purple-400 font-medium transition-colors"
+          >
             Tümünü Gör &rarr;
           </button>
         </div>
@@ -63,7 +80,9 @@ export default function Home() {
                 <ProductCard key={product.id} product={product} />
               ))
             ) : (
-              <p className="text-gray-400 col-span-full text-center py-10">Henüz ürün bulunmuyor.</p>
+              <p className="text-gray-400 col-span-full text-center py-10">
+                {searchQuery ? `"${searchQuery}" ile eşleşen ürün bulunamadı.` : 'Henüz ürün bulunmuyor.'}
+              </p>
             )}
           </div>
         )}
