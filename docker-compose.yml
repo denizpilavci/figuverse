@@ -57,6 +57,7 @@ services:
     volumes:
       - ./backend:/app
       - /app/node_modules
+      - ./frontend/public/images:/app/public/uploads
 
   # 4. Frontend - React.js + Vite
   frontend:

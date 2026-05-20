@@ -39,8 +39,8 @@ class ProductController {
       
       // Eğer dosya yüklendiyse image_url alanına ekle
       if (req.file) {
-        // Backend localhost:5000 veya ayarlı host üzerinde çalıştığı için URL oluştur
-        productData.image_url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+        // Backend'e yüklenen dosyayı Frontend'in public/images klasörüne yazdığımız için URL doğrudan /images/ ile başlar
+        productData.image_url = `/images/${req.file.filename}`;
       } else if (!productData.image_url) {
         productData.image_url = '/images/samurai.png'; // Varsayılan fallback
       }

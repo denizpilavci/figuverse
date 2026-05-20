@@ -55,7 +55,7 @@ export default function ProductDetail() {
           </div>
           <div className="aspect-square rounded-2xl overflow-hidden relative bg-gradient-to-tr from-gray-800 to-gray-900">
             <img 
-              src={product.image_url} 
+              src={product.image_url || '/images/samurai.png'} 
               alt={product.name} 
               className="w-full h-full object-cover animate-float"
             />
