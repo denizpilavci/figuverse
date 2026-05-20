@@ -1,27 +1,26 @@
+import { useState, useEffect } from 'react';
 import ProductCard from '../components/ProductCard';
-
-const mockProducts = [
-  {
-    id: 1,
-    name: 'Ronin - Shadow of the Moon (1/6 Scale)',
-    description: 'Highly detailed anime samurai figure featuring a cinematic rock base and dynamic pose. Masterpiece collection.',
-    price: 249.99,
-    image_url: '/images/samurai.png',
-    universe: 'Anime Originals',
-    stock: 5
-  },
-  {
-    id: 2,
-    name: 'Cyber-Soldier 2077 (Premium Edition)',
-    description: 'Sci-fi space soldier collectible action figure with glowing blue accents and heavily armored exoskeleton.',
-    price: 329.50,
-    image_url: '/images/scifi.png',
-    universe: 'Sci-Fi Universe',
-    stock: 2
-  }
-];
+import { Loader2 } from 'lucide-react';
+import api from '../services/api';
 
 export default function Home() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await api.get('/products');
+        setProducts(res.data.data);
+      } catch (error) {
+        console.error("Ürünler çekilemedi:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProducts();
+  }, []);
+
   return (
     <div className="space-y-16 pb-16">
       {/* Hero Section */}
@@ -53,36 +52,21 @@ export default function Home() {
           </button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {mockProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-          {/* Skeleton placeholders to show layout scale */}
-          <div className="glass-card animate-pulse h-[420px] flex flex-col">
-            <div className="bg-white/5 h-64 w-full"></div>
-            <div className="p-5 flex flex-col flex-grow">
-              <div className="bg-white/10 h-6 rounded w-3/4 mb-4"></div>
-              <div className="bg-white/5 h-4 rounded w-full mb-2"></div>
-              <div className="bg-white/5 h-4 rounded w-2/3 mb-4"></div>
-              <div className="mt-auto flex justify-between">
-                <div className="bg-white/10 h-8 rounded w-1/3"></div>
-                <div className="bg-white/10 h-10 w-10 rounded-xl"></div>
-              </div>
-            </div>
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="animate-spin text-primary" size={48} />
           </div>
-           <div className="glass-card animate-pulse h-[420px] flex flex-col">
-            <div className="bg-white/5 h-64 w-full"></div>
-            <div className="p-5 flex flex-col flex-grow">
-              <div className="bg-white/10 h-6 rounded w-3/4 mb-4"></div>
-              <div className="bg-white/5 h-4 rounded w-full mb-2"></div>
-              <div className="bg-white/5 h-4 rounded w-2/3 mb-4"></div>
-              <div className="mt-auto flex justify-between">
-                <div className="bg-white/10 h-8 rounded w-1/3"></div>
-                <div className="bg-white/10 h-10 w-10 rounded-xl"></div>
-              </div>
-            </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {products.length > 0 ? (
+              products.map(product => (
+                <ProductCard key={product.id} product={product} />
+              ))
+            ) : (
+              <p className="text-gray-400 col-span-full text-center py-10">Henüz ürün bulunmuyor.</p>
+            )}
           </div>
-        </div>
+        )}
       </section>
     </div>
   );

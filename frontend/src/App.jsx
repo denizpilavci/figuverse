@@ -1,11 +1,25 @@
+import { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import ProductDetail from './pages/ProductDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
+import AdminDashboard from './pages/AdminDashboard';
+import Login from './pages/Login';
+import { useAuthStore } from './store/useAuthStore';
+import { useCartStore } from './store/useCartStore';
 
 function App() {
+  const { token } = useAuthStore();
+  const fetchCart = useCartStore((state) => state.fetchCart);
+
+  useEffect(() => {
+    if (token) {
+      fetchCart();
+    }
+  }, [token, fetchCart]);
+
   return (
     <Router>
       <div className="min-h-screen flex flex-col font-sans selection:bg-primary selection:text-white">
@@ -14,9 +28,11 @@ function App() {
         <main className="flex-grow container mx-auto px-6">
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
             <Route path="/product/:id" element={<ProductDetail />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/admin" element={<AdminDashboard />} />
           </Routes>
         </main>
 

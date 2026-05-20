@@ -32,6 +32,19 @@ class OrderController {
       res.status(500).json({ status: 'error', message: error.message });
     }
   }
+
+  async getAllOrders(req, res) {
+    try {
+      const orders = await orderService.getAllOrders();
+      res.status(200).json({
+        status: 'success',
+        results: orders.length,
+        data: orders
+      });
+    } catch (error) {
+      res.status(500).json({ status: 'error', message: error.message });
+    }
+  }
 }
 
 module.exports = new OrderController();

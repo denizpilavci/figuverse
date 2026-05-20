@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart, User, Search, Package } from 'lucide-react';
+import { ShoppingCart, User, Search, Package, LogOut } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
+import { useAuthStore } from '../store/useAuthStore';
 
 export default function Navbar() {
   const { items } = useCartStore();
+  const { user, token, logout } = useAuthStore();
   const itemCount = items.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
@@ -30,6 +32,12 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-6">
+          {token && user?.role === 'admin' && (
+            <Link to="/admin" className="text-gray-400 hover:text-white transition-colors text-sm font-medium">
+              Admin Paneli
+            </Link>
+          )}
+          
           <Link to="/cart" className="relative group">
             <ShoppingCart size={24} className="text-gray-300 group-hover:text-primary transition-colors" />
             {itemCount > 0 && (
@@ -38,10 +46,22 @@ export default function Navbar() {
               </span>
             )}
           </Link>
-          <button className="flex items-center gap-2 text-gray-300 hover:text-primary transition-colors font-medium">
-            <User size={24} />
-            <span className="hidden sm:inline">Giriş Yap</span>
-          </button>
+          
+          {token ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm font-bold text-white bg-white/10 px-3 py-1 rounded-full">
+                {user?.name || 'Kullanıcı'}
+              </span>
+              <button onClick={logout} className="text-gray-400 hover:text-red-400 transition-colors">
+                <LogOut size={20} />
+              </button>
+            </div>
+          ) : (
+            <Link to="/login" className="flex items-center gap-2 text-gray-300 hover:text-primary transition-colors font-medium">
+              <User size={24} />
+              <span className="hidden sm:inline">Giriş Yap</span>
+            </Link>
+          )}
         </div>
       </div>
     </nav>

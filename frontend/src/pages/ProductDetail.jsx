@@ -1,23 +1,47 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useCartStore } from '../store/useCartStore';
-import { ShoppingBag, Star, Shield, Truck } from 'lucide-react';
-
-// Şimdilik mock veri kullanıyoruz. Gerçekte bu veriyi API'den çekeceğiz.
-const mockProduct = {
-  id: 1,
-  name: 'Ronin - Shadow of the Moon (1/6 Scale)',
-  description: 'Göz alıcı detaylara sahip, el boyaması katana kılıcı ve diorama tabanıyla tam bir şaheser. Özel yapım kumaş kıyafetler ve ekstra 3 farklı kafa modellemesi ile birlikte gelir. Koleksiyonerler için özel üretim.',
-  price: 249.99,
-  image_url: '/images/samurai.png',
-  universe: 'Anime Originals',
-  stock: 5
-};
+import { ShoppingBag, Star, Shield, Truck, Loader2 } from 'lucide-react';
+import api from '../services/api';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const addItem = useCartStore((state) => state.addItem);
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Normalde burada useEffect ile API'den id'ye göre ürün çekilir.
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const res = await api.get(`/products/${id}`);
+        setProduct(res.data.data);
+      } catch (err) {
+        setError("Ürün bulunamadı veya yüklenirken bir hata oluştu.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProduct();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <Loader2 className="animate-spin text-primary" size={48} />
+      </div>
+    );
+  }
+
+  if (error || !product) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <h2 className="text-3xl font-bold text-white mb-4">Hata</h2>
+        <p className="text-gray-400 mb-8">{error}</p>
+        <Link to="/" className="bg-primary hover:bg-purple-600 text-white font-bold py-3 px-8 rounded-xl transition-colors">Ana Sayfaya Dön</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="py-8 animate-fade-in">
@@ -27,12 +51,12 @@ export default function ProductDetail() {
         {/* Sol Taraf: Görsel */}
         <div className="glass p-4 rounded-3xl relative group">
           <div className="absolute top-8 left-8 bg-black/50 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 text-sm font-semibold text-white z-10">
-            {mockProduct.universe}
+            {product.universe}
           </div>
           <div className="aspect-square rounded-2xl overflow-hidden relative bg-gradient-to-tr from-gray-800 to-gray-900">
             <img 
-              src={mockProduct.image_url} 
-              alt={mockProduct.name} 
+              src={product.image_url} 
+              alt={product.name} 
               className="w-full h-full object-cover animate-float"
             />
           </div>
@@ -52,15 +76,15 @@ export default function ProductDetail() {
           </div>
           
           <h1 className="text-4xl md:text-5xl font-black text-white mb-6 leading-tight">
-            {mockProduct.name}
+            {product.name}
           </h1>
           
           <p className="text-gray-300 text-lg mb-8 leading-relaxed">
-            {mockProduct.description}
+            {product.description}
           </p>
           
           <div className="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-accent to-yellow-300 mb-8">
-            ${mockProduct.price}
+            ${product.price}
           </div>
 
           {/* Özellikler */}
@@ -77,16 +101,17 @@ export default function ProductDetail() {
           
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => addItem(mockProduct)}
-              className="flex-grow bg-primary hover:bg-purple-600 text-white font-bold py-5 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all hover:shadow-[0_0_30px_rgba(109,40,217,0.5)] transform hover:-translate-y-1"
+              onClick={() => addItem(product)}
+              disabled={product.stock <= 0}
+              className={`flex-grow font-bold py-5 px-8 rounded-2xl flex items-center justify-center gap-3 transition-all transform ${product.stock > 0 ? 'bg-primary hover:bg-purple-600 text-white hover:shadow-[0_0_30px_rgba(109,40,217,0.5)] hover:-translate-y-1' : 'bg-gray-600 text-gray-300 cursor-not-allowed'}`}
             >
               <ShoppingBag size={24} />
-              Sepete Ekle
+              {product.stock > 0 ? 'Sepete Ekle' : 'Stokta Yok'}
             </button>
           </div>
           
           <p className="text-sm text-gray-500 mt-4 text-center">
-            Stokta sadece <span className="font-bold text-white">{mockProduct.stock}</span> adet kaldı!
+            Stokta sadece <span className="font-bold text-white">{product.stock}</span> adet kaldı!
           </p>
         </div>
       </div>

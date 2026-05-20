@@ -1,22 +1,52 @@
 import { create } from 'zustand';
+import api from '../services/api';
 
 export const useCartStore = create((set) => ({
   items: [],
   total: 0,
-  addItem: (product) => set((state) => {
-    const existing = state.items.find(i => i.product_id === product.id);
-    if (existing) {
-      const updatedItems = state.items.map(i => 
-        i.product_id === product.id ? { ...i, quantity: i.quantity + 1, subtotal: (i.quantity + 1) * i.unit_price } : i
-      );
-      return { items: updatedItems, total: updatedItems.reduce((acc, curr) => acc + curr.subtotal, 0) };
+  loading: false,
+
+  fetchCart: async () => {
+    set({ loading: true });
+    try {
+      const res = await api.get('/cart');
+      set({ items: res.data.data.items, total: res.data.data.total, loading: false });
+    } catch (err) {
+      console.error('Sepet çekilemedi:', err);
+      set({ loading: false });
     }
-    const newItems = [...state.items, { product_id: product.id, name: product.name, unit_price: product.price, quantity: 1, subtotal: product.price, image_url: product.image_url }];
-    return { items: newItems, total: newItems.reduce((acc, curr) => acc + curr.subtotal, 0) };
-  }),
-  removeItem: (productId) => set((state) => {
-    const newItems = state.items.filter(i => i.product_id !== productId);
-    return { items: newItems, total: newItems.reduce((acc, curr) => acc + curr.subtotal, 0) };
-  }),
-  clearCart: () => set({ items: [], total: 0 }),
+  },
+
+  addItem: async (product) => {
+    set({ loading: true });
+    try {
+      const res = await api.post('/cart/add', { product_id: product.id, quantity: 1 });
+      set({ items: res.data.data.items, total: res.data.data.total, loading: false });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Ürün eklenemedi. Giriş yaptığınızdan emin olun.');
+      set({ loading: false });
+    }
+  },
+
+  removeItem: async (productId) => {
+    set({ loading: true });
+    try {
+      const res = await api.delete(`/cart/remove/${productId}`);
+      set({ items: res.data.data.items, total: res.data.data.total, loading: false });
+    } catch (err) {
+      console.error('Ürün silinemedi:', err);
+      set({ loading: false });
+    }
+  },
+
+  clearCart: async () => {
+    set({ loading: true });
+    try {
+      await api.delete('/cart/clear');
+      set({ items: [], total: 0, loading: false });
+    } catch (err) {
+      console.error('Sepet temizlenemedi:', err);
+      set({ loading: false });
+    }
+  },
 }));

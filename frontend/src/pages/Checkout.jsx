@@ -1,23 +1,32 @@
 import { useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
 import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, ShieldCheck } from 'lucide-react';
+import { CheckCircle, ShieldCheck, Loader2 } from 'lucide-react';
+import api from '../services/api';
 
 export default function Checkout() {
   const { total, clearCart } = useCartStore();
   const navigate = useNavigate();
   const [isSuccess, setIsSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleCheckout = (e) => {
+  const handleCheckout = async (e) => {
     e.preventDefault();
-    // Normalde burada API'ye sipariş (order) oluşturma isteği atılır.
-    setIsSuccess(true);
-    clearCart();
-    
-    // 3 saniye sonra anasayfaya yönlendir
-    setTimeout(() => {
-      navigate('/');
-    }, 3000);
+    setLoading(true);
+    try {
+      await api.post('/orders');
+      setIsSuccess(true);
+      clearCart();
+      
+      // 3 saniye sonra anasayfaya yönlendir
+      setTimeout(() => {
+        navigate('/');
+      }, 3000);
+    } catch (error) {
+      alert(error.response?.data?.message || 'Sipariş oluşturulamadı. Giriş yaptığınızdan emin olun.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (isSuccess) {
@@ -82,8 +91,12 @@ export default function Checkout() {
             </div>
           </div>
 
-          <button type="submit" className="w-full bg-gradient-to-r from-primary to-accent hover:from-purple-600 hover:to-yellow-500 text-white font-bold py-4 rounded-xl text-lg transition-all shadow-lg transform hover:-translate-y-1">
-            ${total.toFixed(2)} Öde ve Siparişi Tamamla
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full bg-gradient-to-r from-primary to-accent hover:from-purple-600 hover:to-yellow-500 text-white font-bold py-4 rounded-xl text-lg transition-all shadow-lg flex justify-center items-center gap-2 transform hover:-translate-y-1"
+          >
+            {loading ? <Loader2 className="animate-spin" size={24} /> : `$${total.toFixed(2)} Öde ve Siparişi Tamamla`}
           </button>
         </form>
       </div>

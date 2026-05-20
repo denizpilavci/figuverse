@@ -55,8 +55,20 @@ CREATE INDEX idx_products_category ON products(category_id);
 CREATE INDEX idx_products_universe ON products(universe);
 CREATE INDEX idx_orders_user ON orders(user_id);
 
+-- Şifre hashleme için pgcrypto eklentisi
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 -- Test verileri (İsteğe bağlı başlangıç verileri)
 INSERT INTO categories (name, slug) VALUES 
 ('Aksiyon Figürleri', 'action-figures'),
 ('Statüler', 'statues'),
 ('Funko Pop', 'funko-pop');
+
+-- Admin Kullanıcısı Ekleme (Şifre: password123)
+INSERT INTO users (name, email, password_hash, role) VALUES 
+('Admin User', 'admin@figuverse.com', crypt('password123', gen_salt('bf')), 'admin');
+
+-- Örnek Ürünler
+INSERT INTO products (name, description, price, stock, category_id, image_url, universe) VALUES 
+('Ronin - Shadow of the Moon (1/6 Scale)', 'Göz alıcı detaylara sahip, el boyaması katana kılıcı ve diorama tabanıyla tam bir şaheser.', 249.99, 5, 1, '/images/samurai.png', 'Anime Originals'),
+('Cyber-Soldier 2077 (Premium Edition)', 'Sci-fi space soldier collectible action figure with glowing blue accents.', 329.50, 2, 1, '/images/scifi.png', 'Sci-Fi Universe');

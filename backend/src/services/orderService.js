@@ -30,6 +30,10 @@ class OrderService {
   async getUserOrders(userId) {
     return await orderRepository.findByUserId(userId);
   }
+
+  async getAllOrders() {
+    return await orderRepository.findAllOrders();
+  }
 }
 
 module.exports = new OrderService();
