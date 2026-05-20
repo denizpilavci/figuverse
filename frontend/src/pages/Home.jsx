@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import ProductCard from '../components/ProductCard';
 import { Loader2 } from 'lucide-react';
 import api from '../services/api';
@@ -7,16 +7,15 @@ import api from '../services/api';
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get('search') || '';
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
       try {
-        const url = searchQuery ? `/products?search=${searchQuery}` : '/products';
-        const res = await api.get(url);
-        setProducts(res.data.data);
+        const res = await api.get('/products');
+        // Sadece ilk 4 veya 8 ürünü göster
+        setProducts(res.data.data.slice(0, 8));
       } catch (error) {
         console.error("Ürünler çekilemedi:", error);
       } finally {
@@ -24,16 +23,16 @@ export default function Home() {
       }
     };
     fetchProducts();
-  }, [searchQuery]);
+  }, []);
 
-  const scrollToProducts = () => {
-    document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+  const goToProducts = () => {
+    navigate('/products');
   };
 
   return (
     <div className="space-y-16 pb-16">
       {/* Hero Section */}
-      <section className="relative rounded-3xl overflow-hidden glass mt-8 p-1">
+      <section className="relative rounded-3xl overflow-hidden glass mt-8 p-1 animate-fade-in">
         <div className="bg-gradient-to-r from-secondary to-gray-900 rounded-[1.4rem] p-12 md:p-24 flex flex-col items-center text-center relative overflow-hidden">
           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
           <h1 className="text-5xl md:text-7xl font-black mb-6 z-10">
@@ -44,7 +43,7 @@ export default function Home() {
             En sevdiğiniz evrenlerden özenle seçilmiş, premium kalitede kurgusal karakter figürleri FiguVerse'te.
           </p>
           <button 
-            onClick={scrollToProducts}
+            onClick={goToProducts}
             className="z-10 bg-gradient-to-r from-primary to-purple-500 hover:from-purple-500 hover:to-primary text-white font-bold py-4 px-10 rounded-full shadow-[0_0_30px_rgba(109,40,217,0.4)] hover:shadow-[0_0_40px_rgba(109,40,217,0.7)] transition-all duration-300 transform hover:-translate-y-1"
           >
             Koleksiyonu Keşfet
@@ -56,13 +55,11 @@ export default function Home() {
       <section id="products">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-white mb-2">
-              {searchQuery ? `"${searchQuery}" için Sonuçlar` : 'Öne Çıkan Figürler'}
-            </h2>
+            <h2 className="text-3xl font-bold text-white mb-2">Öne Çıkan Figürler</h2>
             <div className="h-1 w-20 bg-accent rounded-full"></div>
           </div>
           <button 
-            onClick={scrollToProducts}
+            onClick={goToProducts}
             className="text-primary hover:text-purple-400 font-medium transition-colors"
           >
             Tümünü Gör &rarr;
