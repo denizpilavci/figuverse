@@ -36,6 +36,8 @@ export default function Home() {
     { name: 'DC Comics', desc: 'Adaletin Koruyucuları', color: 'from-gray-700 to-black', searchQuery: 'DC' }
   ];
 
+  const heroProduct = products.length > 0 ? products[0] : null;
+
   return (
     <div className="space-y-24 pb-20">
 
@@ -63,7 +65,9 @@ export default function Home() {
                 <button onClick={goToProducts} className="bg-white text-gray-950 hover:bg-gray-200 font-bold py-4 px-8 rounded-full transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2">
                   Koleksiyonu Keşfet <ArrowRight size={20} />
                 </button>
-
+                <button onClick={() => heroProduct ? navigate(`/product/${heroProduct.id}`) : goToProducts()} className="glass font-bold py-4 px-8 rounded-full hover:bg-white/10 transition-all duration-300 flex items-center justify-center text-white border border-white/20">
+                  {heroProduct ? 'Yeni Figürü İncele' : 'VIP Üye Ol'}
+                </button>
               </div>
 
               <div className="flex items-center gap-4 pt-8 border-t border-white/10 mt-8">
@@ -85,20 +89,20 @@ export default function Home() {
               {/* Floating Hero Image Container */}
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/30 to-accent/30 rounded-full blur-[100px] animate-pulse"></div>
 
-              <div className="absolute inset-4 md:inset-8 xl:inset-12 rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-[0_0_50px_rgba(109,40,217,0.3)] transform rotate-y-12 hover:rotate-y-0 transition-transform duration-700 bg-gray-900 group">
-                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent z-10 opacity-60"></div>
+              <div onClick={() => heroProduct && navigate(`/product/${heroProduct.id}`)} className="absolute inset-4 md:inset-8 xl:inset-12 rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-[0_0_50px_rgba(109,40,217,0.3)] transform rotate-y-12 hover:rotate-y-0 transition-transform duration-700 bg-gray-900 group cursor-pointer">
+                <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-transparent to-transparent z-10 opacity-60 group-hover:opacity-30 transition-opacity duration-500"></div>
                 <img
-                  src="/images/samurai.png"
-                  alt="Premium Figure"
+                  src={heroProduct ? heroProduct.image_url : "/images/samurai.png"}
+                  alt={heroProduct ? heroProduct.name : "Premium Figure"}
                   className="w-full h-full object-cover scale-110 group-hover:scale-100 transition-transform duration-1000"
                 />
               </div>
 
               {/* Glass Info Cards */}
-              <div className="absolute top-1/4 -left-8 xl:-left-12 glass p-5 rounded-2xl border border-white/20 shadow-2xl animate-float z-20" style={{ animationDelay: '1s' }}>
-                <p className="text-xs text-gray-400 mb-1">Özel Seri</p>
-                <p className="font-bold text-white text-lg">Ronin Samuray</p>
-                <p className="text-primary font-black text-xl">$299.99</p>
+              <div className="absolute top-1/4 -left-8 xl:-left-12 glass p-5 rounded-2xl border border-white/20 shadow-2xl animate-float z-20 pointer-events-none" style={{ animationDelay: '1s' }}>
+                <p className="text-xs text-gray-400 mb-1">{heroProduct ? `${heroProduct.universe} Evreni` : 'Özel Seri'}</p>
+                <p className="font-bold text-white text-lg">{heroProduct ? heroProduct.name : 'Ronin Samuray'}</p>
+                <p className="text-primary font-black text-xl">${heroProduct ? heroProduct.price : '299.99'}</p>
               </div>
             </div>
           </div>
