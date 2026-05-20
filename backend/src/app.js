@@ -8,6 +8,10 @@ app.use(cors()); // İstemci (Frontend) isteklerine izin ver
 app.use(express.json()); // JSON formatındaki istekleri parse et
 app.use(express.urlencoded({ extended: true }));
 
+// Statik Dosyaları (Yüklenen Görseller) Sunma
+const path = require('path');
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
+
 // Temel Test Endpoint'i
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'FiguVerse API is running' });

@@ -10,10 +10,11 @@ router.get('/:id', productController.getProductById);
 
 // Sadece Admin yetkisi gerektiren rotalar
 // Tüm rotaları koruma altına al (Aşağıdaki rotalar için geçerli)
+const upload = require('../utils/upload');
 router.use(protect);
 router.use(restrictTo('admin'));
 
-router.post('/', productController.createProduct);
+router.post('/', upload.single('image'), productController.createProduct);
 router.put('/:id', productController.updateProduct);
 router.delete('/:id', productController.deleteProduct);
 

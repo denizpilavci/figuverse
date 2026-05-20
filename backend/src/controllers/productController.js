@@ -35,8 +35,18 @@ class ProductController {
 
   async createProduct(req, res) {
     try {
+      const productData = { ...req.body };
+      
+      // Eğer dosya yüklendiyse image_url alanına ekle
+      if (req.file) {
+        // Backend localhost:5000 veya ayarlı host üzerinde çalıştığı için URL oluştur
+        productData.image_url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
+      } else if (!productData.image_url) {
+        productData.image_url = '/images/samurai.png'; // Varsayılan fallback
+      }
+
       // Sadece yetkili adminler buraya girebilir (middleware ile korunacak)
-      const newProduct = await productService.createProduct(req.body);
+      const newProduct = await productService.createProduct(productData);
       
       res.status(201).json({
         status: 'success',
