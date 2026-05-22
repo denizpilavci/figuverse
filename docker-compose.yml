@@ -61,7 +61,27 @@ services:
       - ./backend:/app
       - /app/node_modules
 
-  # 4. Frontend - React.js + Vite
+  # 4b. Seed - Admin kullanıcısı oluşturma (npm run seed)
+  seed:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.seed
+    container_name: figuverse_seed
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+      - DB_NAME=figuverse
+    depends_on:
+      postgres:
+        condition: service_started
+    networks:
+      - figuverse_network
+    profiles:
+      - seed
+
+  # 5. Frontend - React.js + Vite
   frontend:
     build:
       context: ./frontend

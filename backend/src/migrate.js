@@ -1,4 +1,8 @@
--- Enum Tipleri (idempotent)
+const db = require('./models/db');
+
+const schema = `
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 DO $$ BEGIN
   CREATE TYPE user_role AS ENUM ('user', 'admin');
 EXCEPTION WHEN duplicate_object THEN NULL;
@@ -9,7 +13,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
--- 1. Users Tablosu
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -19,14 +22,12 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 2. Categories Tablosu
 CREATE TABLE IF NOT EXISTS categories (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     slug VARCHAR(255) UNIQUE NOT NULL
 );
 
--- 3. Products Tablosu
 CREATE TABLE IF NOT EXISTS products (
     id SERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -39,7 +40,6 @@ CREATE TABLE IF NOT EXISTS products (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. Orders Tablosu
 CREATE TABLE IF NOT EXISTS orders (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
@@ -48,7 +48,6 @@ CREATE TABLE IF NOT EXISTS orders (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- 5. Order Items Tablosu
 CREATE TABLE IF NOT EXISTS order_items (
     id SERIAL PRIMARY KEY,
     order_id INTEGER REFERENCES orders(id) ON DELETE CASCADE,
@@ -57,25 +56,18 @@ CREATE TABLE IF NOT EXISTS order_items (
     unit_price DECIMAL(10, 2) NOT NULL
 );
 
--- Performans ve arama hızlandırma için index'ler
 CREATE INDEX IF NOT EXISTS idx_products_category ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_products_universe ON products(universe);
 CREATE INDEX IF NOT EXISTS idx_orders_user ON orders(user_id);
+`;
 
--- Şifre hashleme için pgcrypto eklentisi
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+async function migrate() {
+  try {
+    await db.query(schema);
+    console.log('Migration completed');
+  } catch (err) {
+    console.error('Migration error:', err.message);
+  }
+}
 
--- Test verileri (İsteğe bağlı başlangıç verileri)
-INSERT INTO categories (name, slug) VALUES 
-('Aksiyon Figürleri', 'action-figures'),
-('Statüler', 'statues'),
-('Funko Pop', 'funko-pop');
-
--- Admin Kullanıcısı Ekleme (Şifre: password123)
-INSERT INTO users (name, email, password_hash, role) VALUES 
-('Admin User', 'admin@figuverse.com', crypt('password123', gen_salt('bf')), 'admin');
-
--- Örnek Ürünler
-INSERT INTO products (name, description, price, stock, category_id, image_url, universe) VALUES 
-('Ronin - Shadow of the Moon (1/6 Scale)', 'Göz alıcı detaylara sahip, el boyaması katana kılıcı ve diorama tabanıyla tam bir şaheser.', 249.99, 5, 1, '/images/samurai.png', 'Anime Originals'),
-('Cyber-Soldier 2077 (Premium Edition)', 'Sci-fi space soldier collectible action figure with glowing blue accents.', 329.50, 2, 1, '/images/scifi.png', 'Sci-Fi Universe');
+module.exports = migrate;

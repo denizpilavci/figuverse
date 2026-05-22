@@ -1,14 +1,19 @@
 const app = require('./app');
 const dotenv = require('dotenv');
+const migrate = require('./migrate');
 
-// Ortam değişkenlerini yükle (Docker kullanırken genelde docker-compose.yml'dan gelir)
 dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}...`);
-});
+async function start() {
+  await migrate();
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}...`);
+  });
+}
+
+start();
 
 // Yakalanmayan İstisnaları (Uncaught Exceptions) Yönetimi
 process.on('uncaughtException', err => {

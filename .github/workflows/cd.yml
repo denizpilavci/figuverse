@@ -59,6 +59,14 @@ jobs:
             --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
             --paths "/*"
 
+      # ── Database: Run migrations on RDS ──
+      - name: Run init.sql on RDS
+        run: |
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_USER=$(aws secretsmanager get-secret-value --secret-id ${{ secrets.DB_USER_SECRET_ARN }} --query SecretString --output text)
+          DB_PASSWORD=$(aws secretsmanager get-secret-value --secret-id ${{ secrets.DB_PASSWORD_SECRET_ARN }} --query SecretString --output text)
+          PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d figuverse -f database/init.sql
+
       # ── Backend: Build Docker → Push to ECR → Deploy to ECS ──
       - name: Build & push backend image
         id: backend
