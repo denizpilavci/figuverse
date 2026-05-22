@@ -28,6 +28,17 @@ export const useCartStore = create((set) => ({
     }
   },
 
+  updateItem: async (productId, quantity) => {
+    set({ loading: true });
+    try {
+      const res = await api.patch(`/cart/item/${productId}`, { quantity });
+      set({ items: res.data.data.items, total: res.data.data.total, loading: false });
+    } catch (err) {
+      alert(err.response?.data?.message || 'Miktar güncellenemedi.');
+      set({ loading: false });
+    }
+  },
+
   removeItem: async (productId) => {
     set({ loading: true });
     try {

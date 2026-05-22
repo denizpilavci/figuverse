@@ -37,6 +37,27 @@ class CartController {
     }
   }
 
+  async updateItem(req, res) {
+    try {
+      const userId = req.user.id;
+      const productId = req.params.productId;
+      const { quantity } = req.body;
+
+      if (quantity === undefined || quantity < 0) {
+        return res.status(400).json({ status: 'error', message: 'Geçerli bir miktar girin.' });
+      }
+
+      const updatedCart = await cartService.updateItemQuantity(userId, productId, quantity);
+      res.status(200).json({
+        status: 'success',
+        message: 'Ürün miktarı güncellendi.',
+        data: updatedCart
+      });
+    } catch (error) {
+      res.status(400).json({ status: 'error', message: error.message });
+    }
+  }
+
   async removeItem(req, res) {
     try {
       const userId = req.user.id;

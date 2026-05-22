@@ -63,6 +63,27 @@ class CartService {
     return await this.getCart(userId);
   }
 
+  async updateItemQuantity(userId, productId, quantity) {
+    if (quantity <= 0) {
+      return this.removeItemFromCart(userId, productId);
+    }
+
+    const product = await productRepository.findById(productId);
+    if (!product) throw new Error('Ürün bulunamadı.');
+
+    if (quantity > product.stock) {
+      throw new Error('Yeterli stok bulunmuyor.');
+    }
+
+    const cart = await cartRepository.getCart(userId);
+    const item = cart.items.find(i => i.product_id === Number(productId));
+    if (!item) throw new Error('Ürün sepette bulunamadı.');
+
+    item.quantity = quantity;
+    await cartRepository.saveCart(userId, cart);
+    return this.getCart(userId);
+  }
+
   async removeItemFromCart(userId, productId) {
     const cart = await cartRepository.getCart(userId);
     

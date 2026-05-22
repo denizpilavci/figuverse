@@ -1,9 +1,9 @@
 import { useCartStore } from '../store/useCartStore';
 import { Link } from 'react-router-dom';
-import { Trash2, ShoppingBag, ArrowRight } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, Plus, Minus } from 'lucide-react';
 
 export default function Cart() {
-  const { items, total, removeItem, clearCart } = useCartStore();
+  const { items, total, updateItem, removeItem, clearCart } = useCartStore();
 
   if (items.length === 0) {
     return (
@@ -47,9 +47,20 @@ export default function Cart() {
                 <p className="text-accent font-semibold">${item.unit_price}</p>
               </div>
               
-              <div className="flex items-center gap-4 bg-white/5 rounded-lg px-3 py-1">
-                <span className="text-gray-300 font-medium">Adet:</span>
-                <span className="text-white font-bold">{item.quantity}</span>
+              <div className="flex items-center gap-2 bg-white/5 rounded-lg px-2 py-1">
+                <button
+                  onClick={() => updateItem(item.product_id, item.quantity - 1)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                >
+                  <Minus size={16} />
+                </button>
+                <span className="text-white font-bold min-w-[24px] text-center">{item.quantity}</span>
+                <button
+                  onClick={() => updateItem(item.product_id, item.quantity + 1)}
+                  className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all"
+                >
+                  <Plus size={16} />
+                </button>
               </div>
               
               <div className="text-right min-w-[100px]">

@@ -5,6 +5,12 @@ const admins = [
   { name: 'Admin User', email: 'admin@figuverse.com', password: 'password123' },
 ];
 
+const categories = [
+  { name: 'Aksiyon Figürleri', slug: 'action-figures' },
+  { name: 'Statüler', slug: 'statues' },
+  { name: 'Funko Pop', slug: 'funko-pop' },
+];
+
 async function seed() {
   try {
     for (const admin of admins) {
@@ -24,6 +30,21 @@ async function seed() {
       );
 
       console.log(`Admin "${admin.email}" başarıyla oluşturuldu.`);
+    }
+
+    for (const cat of categories) {
+      const existing = await db.query('SELECT id FROM categories WHERE slug = $1', [cat.slug]);
+      if (existing.rows.length > 0) {
+        console.log(`Kategori "${cat.name}" zaten mevcut, atlanıyor.`);
+        continue;
+      }
+
+      await db.query(
+        `INSERT INTO categories (name, slug) VALUES ($1, $2)`,
+        [cat.name, cat.slug]
+      );
+
+      console.log(`Kategori "${cat.name}" başarıyla oluşturuldu.`);
     }
 
     console.log('Seed işlemi tamamlandı.');
