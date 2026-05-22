@@ -40,6 +40,7 @@ resource "aws_ecs_task_definition" "backend" {
         { name = "DB_NAME",     value = "figuverse" },
         { name = "REDIS_HOST",  value = aws_elasticache_replication_group.main.primary_endpoint_address },
         { name = "REDIS_PORT",  value = "6379" },
+        { name = "REDIS_TLS",   value = "true" },
         { name = "S3_BUCKET",   value = aws_s3_bucket.images.id }
       ]
 
