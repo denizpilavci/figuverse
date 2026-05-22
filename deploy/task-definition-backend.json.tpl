@@ -26,6 +26,7 @@
         { "name": "DB_NAME",    "value": "figuverse" },
         { "name": "REDIS_HOST", "value": "${REDIS_HOST}" },
         { "name": "REDIS_PORT", "value": "6379" },
+        { "name": "REDIS_TLS",  "value": "true" },
         { "name": "DB_SSL",     "value": "true" }
       ],
       "secrets": [
