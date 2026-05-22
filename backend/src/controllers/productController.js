@@ -38,9 +38,9 @@ class ProductController {
       const productData = { ...req.body };
       
       // Eğer dosya yüklendiyse image_url alanına ekle
-      if (req.file) {
-        // Backend'e yüklenen dosyayı Frontend'in public/images klasörüne yazdığımız için URL doğrudan /images/ ile başlar
-        productData.image_url = `/images/${req.file.filename}`;
+      if (req.file && req.file.location) {
+        // multer-s3 dosyayı yüklediğinde URL'i 'location' alanında döndürür
+        productData.image_url = req.file.location;
       } else if (!productData.image_url) {
         productData.image_url = '/images/samurai.png'; // Varsayılan fallback
       }
