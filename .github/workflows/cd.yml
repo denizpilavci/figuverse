@@ -1,0 +1,104 @@
+name: Deploy to AWS
+
+on:
+  push:
+    branches: [main]
+
+env:
+  AWS_REGION: eu-west-1
+  ECR_BACKEND_REPO: figuverse-backend
+  ECS_CLUSTER: figuverse-cluster
+  ECS_BACKEND_SERVICE: figuverse-backend-service
+  ECS_BACKEND_FAMILY: figuverse-backend
+  # S3_FRONTEND_BUCKET → from terraform output `s3_frontend_bucket`
+  S3_FRONTEND_BUCKET: ${{ secrets.S3_FRONTEND_BUCKET }}
+
+jobs:
+  deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── AWS Auth ──
+      # Credentials come from an IAM user created manually.
+      # Required permissions: ECR push, ECS register-task-definition + update-service,
+      # S3 PutObject/ListBucket on frontend bucket, CloudFront create-invalidation,
+      # PassRole for ECS roles.
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Frontend: Build → Upload to S3 → Invalidate CloudFront ──
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        env:
+          VITE_API_URL: /api
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Upload to S3
+        run: |
+          aws s3 sync frontend/dist/ s3://${{ env.S3_FRONTEND_BUCKET }}/ --delete --cache-control "public, max-age=31536000, immutable"
+
+      - name: Invalidate CloudFront cache
+        # CLOUDFRONT_DIST_ID comes from terraform output `cloudfront_distribution_id`
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
+            --paths "/*"
+
+      # ── Backend: Build Docker → Push to ECR → Deploy to ECS ──
+      - name: Build & push backend image
+        id: backend
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          IMAGE_URI=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_BACKEND_REPO }}
+          docker build -t $IMAGE_URI:$IMAGE_TAG -t $IMAGE_URI:latest ./backend
+          docker push $IMAGE_URI --all-tags
+          echo "image=$IMAGE_URI:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Deploy backend to ECS
+        env:
+          # These secrets come from terraform outputs after `terraform apply`:
+          IMAGE_URI: ${{ steps.backend.outputs.image }}
+          # ECS_EXECUTION_ROLE_ARN / ECS_TASK_ROLE_ARN → from terraform output `ecs_execution_role_arn` / `ecs_task_role_arn`
+          ECS_EXECUTION_ROLE_ARN: ${{ secrets.ECS_EXECUTION_ROLE_ARN }}
+          ECS_TASK_ROLE_ARN: ${{ secrets.ECS_TASK_ROLE_ARN }}
+          # DB_HOST / REDIS_HOST → from terraform output `rds_host` / `redis_host`
+          DB_HOST: ${{ secrets.DB_HOST }}
+          REDIS_HOST: ${{ secrets.REDIS_HOST }}
+          # DB_USER_SECRET_ARN / DB_PASSWORD_SECRET_ARN / JWT_SECRET_ARN
+          # → from terraform output `db_user_secret_arn` / `db_password_secret_arn` / `jwt_secret_arn`
+          DB_USER_SECRET_ARN: ${{ secrets.DB_USER_SECRET_ARN }}
+          DB_PASSWORD_SECRET_ARN: ${{ secrets.DB_PASSWORD_SECRET_ARN }}
+          JWT_SECRET_ARN: ${{ secrets.JWT_SECRET_ARN }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+        run: |
+          envsubst < deploy/task-definition-backend.json.tpl > deploy/task-definition-backend.json
+          aws ecs register-task-definition \
+            --cli-input-json file://deploy/task-definition-backend.json
+          aws ecs update-service \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service ${{ env.ECS_BACKEND_SERVICE }} \
+            --task-definition ${{ env.ECS_BACKEND_FAMILY }} \
+            --force-new-deployment
+
+      - name: Wait for service stable
+        run: |
+          aws ecs wait services-stable \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_BACKEND_SERVICE }}
