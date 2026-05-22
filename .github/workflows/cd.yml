@@ -59,14 +59,6 @@ jobs:
             --distribution-id ${{ secrets.CLOUDFRONT_DIST_ID }} \
             --paths "/*"
 
-      # ── Database: Run migrations on RDS ──
-      - name: Run init.sql on RDS
-        run: |
-          DB_HOST=${{ secrets.DB_HOST }}
-          DB_USER=$(aws secretsmanager get-secret-value --secret-id ${{ secrets.DB_USER_SECRET_ARN }} --query SecretString --output text)
-          DB_PASSWORD=$(aws secretsmanager get-secret-value --secret-id ${{ secrets.DB_PASSWORD_SECRET_ARN }} --query SecretString --output text)
-          PGPASSWORD="$DB_PASSWORD" psql -h "$DB_HOST" -U "$DB_USER" -d figuverse -f database/init.sql
-
       # ── Backend: Build Docker → Push to ECR → Deploy to ECS ──
       - name: Build & push backend image
         id: backend
@@ -108,3 +100,64 @@ jobs:
           aws ecs wait services-stable \
             --cluster ${{ env.ECS_CLUSTER }} \
             --services ${{ env.ECS_BACKEND_SERVICE }}
+
+      # ── Migration: Run init.sql inside VPC via Fargate one-off task ──
+      - name: Run database migration
+        run: |
+          # Get network config from the backend service
+          TASK_DEF=$(aws ecs describe-task-definition \
+            --task-definition ${{ env.ECS_BACKEND_FAMILY }} \
+            --query "taskDefinition | {containerName: containerDefinitions[0].name, family: family}" \
+            --output json)
+          CONTAINER_NAME=$(echo "$TASK_DEF" | jq -r '.containerName')
+          FAMILY=$(echo "$TASK_DEF" | jq -r '.family')
+
+          # Get subnet & security group from the running backend service
+          NET_CONFIG=$(aws ecs describe-services \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --services ${{ env.ECS_BACKEND_SERVICE }} \
+            --query "services[0].deployments[0].networkConfiguration.awsvpcConfiguration" \
+            --output json)
+
+          # Run one-off task with migration + seed, wait for completion
+          aws ecs run-task \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --task-definition "$FAMILY" \
+            --launch-type FARGATE \
+            --network-configuration "$NET_CONFIG" \
+            --overrides "{
+              \"containerOverrides\": [{
+                \"name\": \"$CONTAINER_NAME\",
+                \"command\": [\"sh\", \"-c\", \"node src/migrate.js && node src/seed.js\"]
+              }]
+            }" \
+            --query "tasks[0].taskArn" --output text > .migrate-task-arn
+
+          TASK_ARN=$(cat .migrate-task-arn)
+          echo "Migration task started: $TASK_ARN"
+
+          # Wait for the task to finish
+          aws ecs wait tasks-stopped \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN"
+
+          # Check exit code
+          EXIT_CODE=$(aws ecs describe-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --tasks "$TASK_ARN" \
+            --query "tasks[0].containers[0].exitCode" --output text)
+          if [ "$EXIT_CODE" != "0" ]; then
+            echo "Migration failed with exit code $EXIT_CODE"
+            aws logs get-log-events \
+              --log-group /ecs/figuverse-backend \
+              --log-stream-name "$(aws ecs describe-tasks \
+                --cluster ${{ env.ECS_CLUSTER }} \
+                --tasks "$TASK_ARN" \
+                --query "tasks[0].containers[0].taskArn" --output text | cut -d'/' -f3)/$CONTAINER_NAME/$(aws ecs describe-tasks \
+                  --cluster ${{ env.ECS_CLUSTER }} \
+                  --tasks "$TASK_ARN" \
+                  --query "tasks[0].containers[0].runtimeId" --output text)" \
+              --limit 50 --output text
+            exit 1
+          fi
+          echo "Migration completed successfully"
