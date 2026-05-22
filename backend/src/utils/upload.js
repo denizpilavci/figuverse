@@ -4,11 +4,7 @@ const multerS3 = require('multer-s3');
 const path = require('path');
 
 const s3 = new S3Client({
-  region: process.env.AWS_REGION || 'eu-central-1', // Set your region
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  }
+  region: process.env.AWS_REGION || 'eu-central-1',
 });
 
 // Sadece görsellere izin ver
