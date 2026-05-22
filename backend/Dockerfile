@@ -8,6 +8,7 @@ WORKDIR /app
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --chown=nodejs:nodejs . .
+RUN mkdir -p public/uploads && chown -R nodejs:nodejs public
 EXPOSE 5000
 ENV NODE_ENV=production
 USER nodejs
